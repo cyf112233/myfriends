@@ -1,0 +1,62 @@
+# 我的伙伴插件语言文件 - 中文
+# 通用
+prefix: "§8[§e我的伙伴§8] §r"
+fox:
+  name:
+    own: "§e我的伙伴"
+    other: "§7%player%的伙伴"
+  spawn: "§a一只狐狸成为了你的伙伴！"
+  storage:
+    title: "§6我的伙伴的存储空间"
+    open: "§a打开了我的伙伴的存储空间"
+    close: "§a保存了我的伙伴的存储空间"
+  death:
+    respawn: "§c我的伙伴正在复活..."
+    respawned: "§a我的伙伴已经复活"
+  status:
+    none: "未拥有狐狸"
+    enabled: "已启用"
+    disabled: "已禁用"
+
+# 配置相关
+config:
+  language: "语言设置"
+  reload: "§a配置已重载"
+  error: "§c配置加载出错"
+
+# 菜单文本
+menu:
+  storage:
+    title: "§6我的存储"
+    description: "§7点击打开我的伙伴的存储空间"
+  teleport:
+    title: "§6召唤伙伴"
+    description: "§7点击将我的伙伴传送到你身边"
+    success: "§a已将我的伙伴传送到你身边"
+    no-fox: "§c你没有伙伴"
+  settings:
+    title: "§6伙伴设置"
+    description: "§7点击修改伙伴相关设置"
+    show-effects: "显示传送效果"
+    show-messages: "显示提示消息"
+    saved: "§a设置已保存"
+    # 可见性设置
+    visibility:
+      title: "§6可见性设置"
+      show-own: "显示我的伙伴"
+      show-others: "显示他人的伙伴"
+      others-can-see: "允许他人看到我的伙伴"
+    # 红石设置
+    redstone:
+      title: "§6红石设置"
+      can-trigger: "允许伙伴触发红石"
+    # 设置分类
+    category:
+      visibility: "§6可见性设置"
+      redstone: "§6红石设置"
+      effects: "§6效果设置"
+
+# 命令文本
+command:
+  player-only: "§c该命令只能由玩家执行"
+  no-permission: "§c你没有权限使用此命令" 

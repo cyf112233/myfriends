@@ -1,0 +1,32 @@
+# 狐狸伙伴插件配置文件
+
+# 语言设置
+# 可选值: zh_CN (中文), en_US (英文)
+language: zh_CN
+
+# 狐狸设置
+fox:
+  # 传送距离 (格)
+  teleport-distance: 15
+  # 搜索安全位置的最大半径 (格)
+  search-radius: 10
+  # 存储空间大小 (格)
+  storage-size: 9
+  # 是否显示传送效果
+  show-teleport-effects: true
+  # 是否显示传送消息
+  show-teleport-message: false
+  # 是否显示存储界面消息
+  show-storage-message: false
+  # 是否显示死亡和复活消息
+  show-death-message: true
+  # 以下是默认模板，玩家可单独设置
+  # 可见性设置
+  visibility:
+    show-own-fox: true        # 是否显示自己的狐狸
+    show-others-fox: true     # 是否显示其他人的狐狸
+    others-can-see-my-fox: true  # 其他人是否能看到我的狐狸
+  
+  # 红石设置
+  redstone:
+    can-trigger: false        # 狐狸是否能触发红石装置 
