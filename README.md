@@ -50,7 +50,7 @@
 ## 📦 安装要求
 
 - Minecraft 服务器版本：1.13 或更高
-- 必需插件：
+- 可运行在：
   - Spigot/Paper 服务器
 - 可选插件：
   - PlaceholderAPI（用于变量支持）
@@ -86,7 +86,7 @@
 
 - 作者：cxkcxkckx
 - 插件名称：MyFriends
-- 版本：支持自动更新
+- 版本：看发行
 
 ## 📝 更新日志
 
@@ -104,4 +104,4 @@
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。 
+本项目采用 GPLv3 许可证。详见 [LICENSE](LICENSE) 文件。 
