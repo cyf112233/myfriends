@@ -37,10 +37,46 @@ public class FoxModule implements Listener {
     private final MyFriends plugin;
     private final Map<UUID, UUID> playerFoxMap = new HashMap<>(); // 玩家UUID -> 狐狸UUID
     private final FoxStorage storage;
+    private final int TELEPORT_DISTANCE;
+    private int taskId = -1;
 
     public FoxModule(MyFriends plugin) {
         this.plugin = plugin;
         this.storage = new FoxStorage(plugin);
+        this.TELEPORT_DISTANCE = plugin.getConfig().getInt("fox.teleport-distance", 15);
+        // 启动定时任务，每2秒检查一次狐狸位置
+        taskId = Bukkit.getScheduler().runTaskTimer(plugin, this::checkFoxLocations, 20L, 40L).getTaskId();
+    }
+
+    private void checkFoxLocations() {
+        for (Map.Entry<UUID, UUID> entry : new HashMap<>(playerFoxMap).entrySet()) {
+            Player player = Bukkit.getPlayer(entry.getKey());
+            if (player == null || !player.isOnline()) continue;
+
+            Fox fox = (Fox) Bukkit.getEntity(entry.getValue());
+            if (fox == null || fox.isDead()) {
+                cleanupDuplicateFoxes(player);
+                if (!playerFoxMap.containsKey(player.getUniqueId())) {
+                    spawnFox(player);
+                }
+                continue;
+            }
+
+            if (!fox.getLocation().getChunk().isLoaded()) {
+                cleanupDuplicateFoxes(player);
+                if (!playerFoxMap.containsKey(player.getUniqueId())) {
+                    spawnFox(player);
+                }
+                continue;
+            }
+
+            double distance = fox.getLocation().distance(player.getLocation());
+            
+            // 如果距离超过传送距离，直接传送到玩家身边
+            if (distance > TELEPORT_DISTANCE) {
+                fox.teleport(player.getLocation());
+            }
+        }
     }
 
     private void spawnFox(Player player) {
@@ -91,6 +127,11 @@ public class FoxModule implements Listener {
     }
 
     public void onDisable() {
+        // 取消定时任务
+        if (taskId != -1) {
+            Bukkit.getScheduler().cancelTask(taskId);
+            taskId = -1;
+        }
         // 清理所有狐狸
         removeAllFoxes();
     }
