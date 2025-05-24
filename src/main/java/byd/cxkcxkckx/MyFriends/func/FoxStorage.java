@@ -3,14 +3,18 @@ package byd.cxkcxkckx.MyFriends.func;
 import byd.cxkcxkckx.MyFriends.MyFriends;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.util.io.BukkitObjectInputStream;
+import org.bukkit.util.io.BukkitObjectOutputStream;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -19,38 +23,75 @@ public class FoxStorage {
     private final MyFriends plugin;
     private final Map<UUID, ItemStack[]> storageMap = new HashMap<>(); // 玩家UUID -> 存储物品（缓存）
     private static final int INVENTORY_SIZE = 9; // 一行9格
-    private static final NamespacedKey STORAGE_KEY;
-
-    static {
-        STORAGE_KEY = new NamespacedKey(MyFriends.getInstance(), "fox_storage");
-    }
+    private final File storageFolder;
 
     public FoxStorage(MyFriends plugin) {
         this.plugin = plugin;
+        this.storageFolder = new File(plugin.getDataFolder(), "storage");
+        if (!storageFolder.exists()) {
+            storageFolder.mkdirs();
+        }
+    }
+
+    private File getStorageFile(UUID uuid) {
+        return new File(storageFolder, uuid.toString() + ".yml");
+    }
+
+    // 将物品数组序列化为Base64字符串
+    private String itemStackArrayToBase64(ItemStack[] items) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
+        
+        // 写入物品数量
+        dataOutput.writeInt(items.length);
+        
+        // 写入每个物品
+        for (ItemStack item : items) {
+            dataOutput.writeObject(item);
+        }
+        
+        dataOutput.close();
+        return Base64Coder.encodeLines(outputStream.toByteArray());
+    }
+
+    // 将Base64字符串反序列化为物品数组
+    private ItemStack[] itemStackArrayFromBase64(String data) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(data));
+        BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
+        
+        // 读取物品数量
+        int size = dataInput.readInt();
+        ItemStack[] items = new ItemStack[size];
+        
+        // 读取每个物品
+        for (int i = 0; i < size; i++) {
+            items[i] = (ItemStack) dataInput.readObject();
+        }
+        
+        dataInput.close();
+        return items;
     }
 
     private void loadPlayerStorage(Player player) {
-        PersistentDataContainer container = player.getPersistentDataContainer();
-        if (!container.has(STORAGE_KEY, PersistentDataType.TAG_CONTAINER)) {
+        File storageFile = getStorageFile(player.getUniqueId());
+        if (!storageFile.exists()) {
             return;
         }
 
-        PersistentDataContainer storageContainer = container.get(STORAGE_KEY, PersistentDataType.TAG_CONTAINER);
-        if (storageContainer == null) {
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(storageFile);
+        if (!config.contains("items")) {
             return;
         }
 
-        ItemStack[] items = new ItemStack[INVENTORY_SIZE];
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            NamespacedKey slotKey = new NamespacedKey(plugin, "slot_" + i);
-            if (storageContainer.has(slotKey, PersistentDataType.STRING)) {
-                String itemData = storageContainer.get(slotKey, PersistentDataType.STRING);
-                if (itemData != null) {
-                    items[i] = deserializeItem(itemData);
-                }
+        try {
+            String itemsData = config.getString("items");
+            if (itemsData != null) {
+                ItemStack[] items = itemStackArrayFromBase64(itemsData);
+                storageMap.put(player.getUniqueId(), items);
             }
+        } catch (Exception e) {
+            plugin.getLogger().warning("加载玩家 " + player.getName() + " 的存储数据时出错: " + e.getMessage());
         }
-        storageMap.put(player.getUniqueId(), items);
     }
 
     private void savePlayerStorage(Player player) {
@@ -59,39 +100,20 @@ public class FoxStorage {
             return;
         }
 
-        PersistentDataContainer container = player.getPersistentDataContainer();
-        PersistentDataContainer storageContainer = container.getAdapterContext().newPersistentDataContainer();
-
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            if (items[i] != null) {
-                NamespacedKey slotKey = new NamespacedKey(plugin, "slot_" + i);
-                String itemData = serializeItem(items[i]);
-                storageContainer.set(slotKey, PersistentDataType.STRING, itemData);
-            }
-        }
-
-        container.set(STORAGE_KEY, PersistentDataType.TAG_CONTAINER, storageContainer);
-    }
-
-    private String serializeItem(ItemStack item) {
+        File storageFile = getStorageFile(player.getUniqueId());
         YamlConfiguration config = new YamlConfiguration();
-        config.set("item", item);
-        return config.saveToString();
-    }
-
-    private ItemStack deserializeItem(String data) {
-        YamlConfiguration config = new YamlConfiguration();
+        
         try {
-            config.loadFromString(data);
-            return config.getItemStack("item");
-        } catch (Exception e) {
-            plugin.getLogger().warning("无法反序列化物品数据：" + e.getMessage());
-            return null;
+            String itemsData = itemStackArrayToBase64(items);
+            config.set("items", itemsData);
+            config.save(storageFile);
+        } catch (IOException e) {
+            plugin.getLogger().warning("保存玩家 " + player.getName() + " 的存储数据时出错: " + e.getMessage());
         }
     }
 
     public void openStorage(Player player) {
-        // 如果缓存中没有数据，尝试从玩家存档加载
+        // 如果缓存中没有数据，尝试从文件加载
         if (!storageMap.containsKey(player.getUniqueId())) {
             loadPlayerStorage(player);
         }
@@ -125,8 +147,10 @@ public class FoxStorage {
 
     public void clearStorage(Player player) {
         storageMap.remove(player.getUniqueId());
-        PersistentDataContainer container = player.getPersistentDataContainer();
-        container.remove(STORAGE_KEY);
+        File storageFile = getStorageFile(player.getUniqueId());
+        if (storageFile.exists()) {
+            storageFile.delete();
+        }
     }
 
     // 当玩家加入服务器时调用此方法
