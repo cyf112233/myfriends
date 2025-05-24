@@ -31,17 +31,11 @@ public class PlayerSettings {
         if (!configFile.exists()) {
             // 创建默认设置
             YamlConfiguration config = new YamlConfiguration();
-            // 可见性设置
-            config.set("visibility.show-own-fox", true);
-            config.set("visibility.show-others-fox", true);
-            config.set("visibility.others-can-see-my-fox", true);
-            // 红石设置
-            config.set("redstone.can-trigger", false);
-            // 效果设置
-            config.set("effects.show-teleport-effects", true);
-            config.set("effects.show-teleport-message", true);
-            config.set("effects.show-storage-message", true);
-            config.set("effects.show-death-message", true);
+            // 从配置文件读取默认设置
+            config.set("visibility.show-own-fox", plugin.getConfig().getBoolean("fox.visibility.show-own-fox", true));
+            config.set("visibility.show-others-fox", plugin.getConfig().getBoolean("fox.visibility.show-others-fox", true));
+            config.set("visibility.others-can-see-my-fox", plugin.getConfig().getBoolean("fox.visibility.others-can-see-my-fox", true));
+            config.set("redstone.can-trigger", plugin.getConfig().getBoolean("fox.redstone.can-trigger", false));
             
             try {
                 config.save(configFile);
