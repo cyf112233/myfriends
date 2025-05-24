@@ -258,8 +258,8 @@ public class FoxModule implements Listener {
                 fox.remove();
             }
             playerFoxMap.remove(player.getUniqueId());
-            // 清除存储数据
-            storage.clearStorage(player);
+            // 保存存储数据（不再清除）
+            storage.onPlayerQuit(player);
             // 更新剩余狐狸的名称显示
             updateFoxNames();
         }
