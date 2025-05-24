@@ -29,6 +29,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventPriority;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.entity.Mob;
+import org.bukkit.event.entity.EntityMoveEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +44,6 @@ public class FoxModule implements Listener {
     private final FoxStorage storage;
     private final int TELEPORT_DISTANCE;
     private final int MAX_SEARCH_RADIUS;
-    private int taskId = -1;
 
     public FoxModule(MyFriends plugin) {
         this.plugin = plugin;
@@ -51,40 +51,6 @@ public class FoxModule implements Listener {
         // 从配置文件加载设置
         this.TELEPORT_DISTANCE = plugin.getConfig().getInt("fox.teleport-distance", 15);
         this.MAX_SEARCH_RADIUS = plugin.getConfig().getInt("fox.search-radius", 10);
-        // 启动定时任务，每2秒检查一次狐狸位置
-        taskId = Bukkit.getScheduler().runTaskTimer(plugin, this::checkFoxLocations, 20L, 40L).getTaskId();
-    }
-
-    private void checkFoxLocations() {
-        for (Map.Entry<UUID, UUID> entry : new HashMap<>(playerFoxMap).entrySet()) {
-            Player player = Bukkit.getPlayer(entry.getKey());
-            if (player == null || !player.isOnline()) continue;
-
-            Fox fox = (Fox) Bukkit.getEntity(entry.getValue());
-            if (fox == null || fox.isDead()) {
-                cleanupDuplicateFoxes(player);
-                if (!playerFoxMap.containsKey(player.getUniqueId())) {
-                    spawnFox(player);
-                }
-                continue;
-            }
-
-            if (!fox.getLocation().getChunk().isLoaded()) {
-                cleanupDuplicateFoxes(player);
-                if (!playerFoxMap.containsKey(player.getUniqueId())) {
-                    spawnFox(player);
-                }
-                continue;
-            }
-
-            double distance = fox.getLocation().distance(player.getLocation());
-            
-            // 如果距离超过传送距离，直接传送
-            if (distance > TELEPORT_DISTANCE) {
-                Location safeLoc = findSafeLocation(player.getLocation());
-                fox.teleport(safeLoc);
-            }
-        }
     }
 
     private void spawnFox(Player player) {
@@ -125,17 +91,9 @@ public class FoxModule implements Listener {
 
     private void setupFoxAI(Fox fox) {
         // 设置基本属性
-        fox.setAware(true); // 让狐狸感知周围环境
+        fox.setAware(false); // 禁用感知，防止对玩家产生害怕反应
         fox.setCanPickupItems(false); // 禁止拾取物品
-        
-        // 设置 AI 目标
-        fox.setAI(true); // 启用 AI
-        
-        // 设置属性
-        AttributeInstance followRange = fox.getAttribute(Attribute.GENERIC_FOLLOW_RANGE);
-        if (followRange != null) {
-            followRange.setBaseValue(32.0); // 设置跟随范围
-        }
+        fox.setAI(true); // 启用AI，允许自由移动
         
         // 标记为被动实体
         NamespacedKey passiveKey = new NamespacedKey(plugin, "passive_fox");
@@ -348,22 +306,16 @@ public class FoxModule implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onFoxFear(EntityTargetEvent event) {
         if (!(event.getEntity() instanceof Fox)) return;
         Fox fox = (Fox) event.getEntity();
         // 检查是否是玩家的狐狸
         if (fox.getPersistentDataContainer().has(plugin.getKey("owner"), PersistentDataType.STRING)) {
-            // 如果是玩家，取消目标事件
-            if (event.getTarget() instanceof Player) {
-                event.setCancelled(true);
-                // 如果是害怕事件，取消狐狸的移动
-                if (event.getReason() == EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY ||
-                    event.getReason() == EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY ||
-                    event.getReason() == EntityTargetEvent.TargetReason.TARGET_ATTACKED_OWNER) {
-                    fox.setVelocity(new Vector(0, 0, 0));
-                }
-            }
+            // 取消所有目标事件
+            event.setCancelled(true);
+            // 立即停止移动
+            fox.setVelocity(new Vector(0, 0, 0));
         }
     }
 
