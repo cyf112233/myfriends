@@ -101,6 +101,9 @@ public class FoxModule implements Listener {
         fox.setAI(true); // 启用AI，允许自由移动
         fox.setCanPickupItems(false);
         
+        // 设置狐狸类型为玩家繁殖的狐狸
+        fox.setFoxType(Fox.Type.RED); // 设置为红色狐狸，这是玩家繁殖的狐狸类型
+        
         // 设置最大生命值
         if (fox.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
             fox.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(20.0);
@@ -117,7 +120,7 @@ public class FoxModule implements Listener {
 
     private void setupFoxAI(Fox fox) {
         // 设置基本属性
-        fox.setAware(false); // 禁用感知，防止对玩家产生害怕反应
+        fox.setAware(true); // 启用感知
         fox.setCanPickupItems(false); // 禁止拾取物品
         fox.setAI(true); // 启用AI，允许自由移动
         
