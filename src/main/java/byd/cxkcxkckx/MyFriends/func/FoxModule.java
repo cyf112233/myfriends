@@ -83,18 +83,6 @@ public class FoxModule implements Listener {
             if (distance > TELEPORT_DISTANCE) {
                 Location safeLoc = findSafeLocation(player.getLocation());
                 fox.teleport(safeLoc);
-                
-                // 显示传送效果
-                if (plugin.getConfig().getBoolean("fox.show-teleport-effects", true)) {
-                    fox.getWorld().spawnParticle(org.bukkit.Particle.PORTAL, safeLoc, 20, 0.5, 0.5, 0.5, 0);
-                    fox.getWorld().playSound(safeLoc, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 0.5f, 1.0f);
-                }
-                
-                // 显示传送消息
-                if (plugin.getConfig().getBoolean("fox.show-teleport-message", true)) {
-                    player.sendMessage(plugin.getLanguageManager().getMessage("prefix") + 
-                                     plugin.getLanguageManager().getMessage("fox.teleport.particle"));
-                }
             }
         }
     }
@@ -133,10 +121,6 @@ public class FoxModule implements Listener {
         // 保存狐狸和玩家的绑定关系
         fox.getPersistentDataContainer().set(plugin.getKey("owner"), PersistentDataType.STRING, player.getUniqueId().toString());
         playerFoxMap.put(player.getUniqueId(), fox.getUniqueId());
-        
-        // 发送消息
-        player.sendMessage(plugin.getLanguageManager().getMessage("prefix") + 
-                          plugin.getLanguageManager().getMessage("fox.spawn"));
     }
 
     private void setupFoxAI(Fox fox) {
@@ -284,22 +268,11 @@ public class FoxModule implements Listener {
             event.setDroppedExp(0);
             event.getDrops().clear();
             
-            Player owner = Bukkit.getPlayer(UUID.fromString(ownerUUID));
-            if (owner != null && owner.isOnline() && 
-                plugin.getConfig().getBoolean("fox.show-death-message", true)) {
-                owner.sendMessage(plugin.getLanguageManager().getMessage("prefix") + 
-                                plugin.getLanguageManager().getMessage("fox.death.respawn"));
-            }
-            
             // 延迟1秒后复活狐狸
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 Player owner2 = Bukkit.getPlayer(UUID.fromString(ownerUUID));
                 if (owner2 != null && owner2.isOnline()) {
                     spawnFox(owner2);
-                    if (plugin.getConfig().getBoolean("fox.show-death-message", true)) {
-                        owner2.sendMessage(plugin.getLanguageManager().getMessage("prefix") + 
-                                         plugin.getLanguageManager().getMessage("fox.death.respawned"));
-                    }
                 }
             }, 20L);
         }
@@ -317,10 +290,6 @@ public class FoxModule implements Listener {
             event.setCancelled(true);
             // 打开存储界面
             storage.openStorage(player);
-            if (plugin.getConfig().getBoolean("fox.show-storage-message", true)) {
-                player.sendMessage(plugin.getLanguageManager().getMessage("prefix") + 
-                                 plugin.getLanguageManager().getMessage("fox.storage.open"));
-            }
         }
     }
 
@@ -332,10 +301,6 @@ public class FoxModule implements Listener {
         Player player = (Player) event.getPlayer();
         // 保存存储内容
         storage.saveStorage(player, event.getInventory());
-        if (plugin.getConfig().getBoolean("fox.show-storage-message", true)) {
-            player.sendMessage(plugin.getLanguageManager().getMessage("prefix") + 
-                             plugin.getLanguageManager().getMessage("fox.storage.close"));
-        }
     }
 
     @EventHandler

@@ -12,14 +12,6 @@ fox:
   search-radius: 10
   # 存储空间大小 (格)
   storage-size: 9
-  # 是否显示传送效果
-  show-teleport-effects: true
-  # 是否显示传送消息
-  show-teleport-message: false
-  # 是否显示存储界面消息
-  show-storage-message: false
-  # 是否显示死亡和复活消息
-  show-death-message: true
   # 以下是默认模板，玩家可单独设置
   # 可见性设置
   visibility:
