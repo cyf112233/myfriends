@@ -140,6 +140,9 @@ public class FoxModule implements Listener {
         // 标记为被动实体
         NamespacedKey passiveKey = new NamespacedKey(plugin, "passive_fox");
         fox.getPersistentDataContainer().set(passiveKey, PersistentDataType.BYTE, (byte) 1);
+        
+        // 设置狐狸为信任状态，不会害怕玩家
+        fox.setTrusting(true);
     }
 
     private Location findSafeLocation(Location center) {
@@ -349,12 +352,14 @@ public class FoxModule implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGH)
-    public void onFoxTarget(EntityTargetEvent event) {
-        if (event.getEntity() instanceof Fox) {
-            Fox fox = (Fox) event.getEntity();
-            // 检查是否是玩家的狐狸
-            if (fox.getPersistentDataContainer().has(new NamespacedKey(plugin, "passive_fox"), PersistentDataType.BYTE)) {
-                event.setCancelled(true); // 取消目标事件，防止狐狸攻击其他实体
+    public void onFoxFear(EntityTargetEvent event) {
+        if (!(event.getEntity() instanceof Fox)) return;
+        Fox fox = (Fox) event.getEntity();
+        // 检查是否是玩家的狐狸
+        if (fox.getPersistentDataContainer().has(plugin.getKey("owner"), PersistentDataType.STRING)) {
+            // 如果是玩家，取消目标事件
+            if (event.getTarget() instanceof Player) {
+                event.setCancelled(true);
             }
         }
     }
