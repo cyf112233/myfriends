@@ -17,19 +17,14 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
-import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventPriority;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.entity.Mob;
-import org.bukkit.event.entity.EntityMoveEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,15 +37,10 @@ public class FoxModule implements Listener {
     private final MyFriends plugin;
     private final Map<UUID, UUID> playerFoxMap = new HashMap<>(); // 玩家UUID -> 狐狸UUID
     private final FoxStorage storage;
-    private final int TELEPORT_DISTANCE;
-    private final int MAX_SEARCH_RADIUS;
 
     public FoxModule(MyFriends plugin) {
         this.plugin = plugin;
         this.storage = new FoxStorage(plugin);
-        // 从配置文件加载设置
-        this.TELEPORT_DISTANCE = plugin.getConfig().getInt("fox.teleport-distance", 15);
-        this.MAX_SEARCH_RADIUS = plugin.getConfig().getInt("fox.search-radius", 10);
     }
 
     private void spawnFox(Player player) {
@@ -100,78 +90,9 @@ public class FoxModule implements Listener {
         fox.getPersistentDataContainer().set(passiveKey, PersistentDataType.BYTE, (byte) 1);
     }
 
-    private Location findSafeLocation(Location center) {
-        List<Location> safeLocations = new ArrayList<>();
-        
-        // 在玩家周围搜索安全位置
-        for (int x = -MAX_SEARCH_RADIUS; x <= MAX_SEARCH_RADIUS; x++) {
-            for (int z = -MAX_SEARCH_RADIUS; z <= MAX_SEARCH_RADIUS; z++) {
-                Location loc = center.clone().add(x, 0, z);
-                // 从当前位置向下搜索地面
-                Location ground = findGround(loc);
-                if (ground != null && isSafeLocation(ground)) {
-                    safeLocations.add(ground);
-                }
-            }
-        }
-
-        if (safeLocations.isEmpty()) {
-            // 如果找不到安全位置，返回玩家位置
-            return center;
-        }
-
-        // 找到距离玩家最近的安全位置
-        Location nearest = safeLocations.get(0);
-        double minDistance = nearest.distanceSquared(center);
-        
-        for (Location loc : safeLocations) {
-            double distance = loc.distanceSquared(center);
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearest = loc;
-            }
-        }
-
-        return nearest;
-    }
-
-    private Location findGround(Location loc) {
-        // 从当前位置向下搜索地面
-        for (int y = 0; y > -10; y--) {
-            Location check = loc.clone().add(0, y, 0);
-            Block block = check.getBlock();
-            if (!block.getType().isAir() && 
-                !block.getType().name().contains("WATER") && 
-                !block.getType().name().contains("LAVA")) {
-                // 找到地面，返回上方一格的位置
-                return check.add(0, 1, 0);
-            }
-        }
-        return null;
-    }
-
-    private boolean isSafeLocation(Location loc) {
-        Block block = loc.getBlock();
-        Block blockAbove = loc.clone().add(0, 1, 0).getBlock();
-        Block blockBelow = loc.clone().add(0, -1, 0).getBlock();
-        
-        // 检查是否是安全的位置（不是液体，上方有空间，下方是固体）
-        return !block.getType().name().contains("WATER") && 
-               !block.getType().name().contains("LAVA") &&
-               !blockAbove.getType().name().contains("WATER") && 
-               !blockAbove.getType().name().contains("LAVA") &&
-               blockAbove.getType().isAir() && 
-               !blockBelow.getType().isAir() && 
-               !blockBelow.getType().name().contains("WATER") &&
-               !blockBelow.getType().name().contains("LAVA");
-    }
-
     public void onDisable() {
-        // 取消定时任务
-        if (taskId != -1) {
-            Bukkit.getScheduler().cancelTask(taskId);
-            taskId = -1;
-        }
+        // 清理所有狐狸
+        removeAllFoxes();
     }
 
     @EventHandler
