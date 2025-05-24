@@ -269,15 +269,13 @@ public class FoxModule implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onFoxFear(EntityTargetEvent event) {
+    public void onFoxTarget(EntityTargetEvent event) {
         if (!(event.getEntity() instanceof Fox)) return;
         Fox fox = (Fox) event.getEntity();
         // 检查是否是玩家的狐狸
         if (fox.getPersistentDataContainer().has(plugin.getKey("owner"), PersistentDataType.STRING)) {
-            // 取消所有目标事件
+            // 取消所有目标事件，防止狐狸攻击任何生物
             event.setCancelled(true);
-            // 立即停止移动
-            fox.setVelocity(new Vector(0, 0, 0));
         }
     }
 
